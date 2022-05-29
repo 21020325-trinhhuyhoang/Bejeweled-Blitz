@@ -81,14 +81,31 @@ public:
             addBomGem(i, j, -1);
         }
     }
+
+    void addNewBomGem(int turn) {
+        int j;
+        if (turn < 20) {
+        if (turn % 2 == 0) {
+            do {
+                j = (rand() % 8)+1;
+            } while (boardBom[0][j] >= 0);
+            addBomGem(0, j, 20 - turn/4);
+        }
+        } else {
+            do {
+                j = (rand() % 8)+1;
+            } while (boardBom[0][j] >= 0);
+            addBomGem(0, j, 15);
+        }
+    }
     
-    void swapGem(Target &gem1, Target &gem2) {
-        int temp = board[gem1.x][gem1.y];
-        board[gem1.x][gem1.y] = board[gem2.x][gem2.y];
-        board[gem2.x][gem2.y] = temp;
-        temp = boardBom[gem1.x][gem1.y];
-        boardBom[gem1.x][gem1.y] = boardBom[gem2.x][gem2.y];
-        boardBom[gem2.x][gem2.y] = temp;
+    void swapGem(int x1, int y1, int x2, int y2) {
+        int temp = board[x1][y1];
+        board[x1][y1] = board[x2][y2];
+        board[x2][y2] = temp;
+        temp = boardBom[x1][y1];
+        boardBom[x1][y1] = boardBom[x2][y2];
+        boardBom[x2][y2] = temp;
     }
 
     int getGem(int i, int j) {
@@ -190,13 +207,13 @@ public:
             for (int j = 0; j < 10; j++)
                 if (getGem(i, j) == 0) {
                     for (int i0 = i; i0 > 0; i0--) {
-                        Target target1(i0, j), target2(i0-1, j);
-                        swapGem(target1, target2);
+                        swapGem(i0, j, i0-1, j);
                     }
                     addGem(0, j);
                 }
         }
-}
+        addNewBomGem(0);
+    }
 
 };
 
@@ -232,7 +249,7 @@ void quitSDL(SDL_Window* win, SDL_Renderer* ren) {
     SDL_Quit();
 }
 
-void renderStartGame1(SDL_Renderer* renderer, Painter &painter) {
+void renderGameStart1(SDL_Renderer* renderer, Painter &painter) {
     SDL_Texture* texture = NULL;
     SDL_Rect dstrect;
 
@@ -264,7 +281,7 @@ void renderStartGame1(SDL_Renderer* renderer, Painter &painter) {
     SDL_Delay(100);
 }
 
-void renderStartGame2(SDL_Renderer* renderer, Painter &painter) {
+void renderGameStart2(SDL_Renderer* renderer, Painter &painter) {
     SDL_Texture* texture = NULL;
     SDL_Rect dstrect;
 
@@ -297,7 +314,10 @@ void renderStartGame2(SDL_Renderer* renderer, Painter &painter) {
 }
 
 void renderGameOver(SDL_Renderer* renderer,Painter &painter, int &score) {
+    TTF_Font * font = NULL; 
+	SDL_Surface * surface = NULL;
     SDL_Texture* texture = NULL;
+    SDL_Rect srcrect;
     SDL_Rect dstrect;
 
     texture = painter.loadTexture("images/Background.png");
@@ -313,6 +333,20 @@ void renderGameOver(SDL_Renderer* renderer,Painter &painter, int &score) {
     texture = painter.loadTexture("images/score2.png");
     SDL_RenderCopy( renderer, texture, NULL, &dstrect ); 
     SDL_DestroyTexture(texture);
+
+    font = TTF_OpenFont("fonts/1.ttf", 70);
+	SDL_Color fg = {255, 100, 0};
+    string text = to_string(score);
+	surface = TTF_RenderText_Solid(font, text.c_str(), fg);
+	texture = SDL_CreateTextureFromSurface(renderer, surface);
+	SDL_FreeSurface(surface);
+    TTF_SizeText(font, text.c_str(), &srcrect.w, &srcrect.h);
+    srcrect.x = 0; srcrect.y = 0;
+    dstrect.x = 450 - srcrect.w/2; dstrect.y = 450; dstrect.w = srcrect.w; dstrect.h = srcrect.h;
+    SDL_RenderCopy(renderer, texture, &srcrect, &dstrect);
+    SDL_DestroyTexture(texture);
+
+    SDL_RenderPresent(renderer);
 }
 
 void drawGems(SDL_Renderer* renderer, Painter &painter, PlayGround &playGround, int i, int j) {
@@ -470,24 +504,6 @@ void renderGamePlay(SDL_Renderer* renderer, PlayGround& playGround, Target &targ
         }
     drawTime(renderer, painter, playGround);
     drawTarget1( renderer, target, painter);
-}
-
-void addNewBomGem(SDL_Renderer* renderer, PlayGround& playGround, Target &target, Painter &painter, int &score, int &turn) {
-    int j;
-    if (turn < 20) {
-        if (turn % 2 == 0) {
-            do {
-                j = (rand() % 8)+1;
-            } while (playGround.getBomGem(0, j) >= 0);
-            playGround.addBomGem(0, j, 20 - turn/4);
-        }
-    } else {
-        do {
-            j = (rand() % 8)+1;
-        } while (playGround.getBomGem(0, j) >= 0);
-        playGround.addBomGem(0, j, 15);
-    }
-    renderGamePlay(renderer, playGround, target, painter, score);
     SDL_RenderPresent(renderer);
 }
 
@@ -508,7 +524,6 @@ void moveTarget(SDL_Renderer* renderer, PlayGround& playGround, Target &target, 
                     target.left();
                     Mix_PlayChannel(-1, chunk, 0);
                     renderGamePlay(renderer, playGround, target, painter, score);
-                    SDL_RenderPresent(renderer);
                 }
                 break;
             case SDLK_RIGHT:
@@ -516,7 +531,6 @@ void moveTarget(SDL_Renderer* renderer, PlayGround& playGround, Target &target, 
                     target.right();
                     Mix_PlayChannel(-1, chunk, 0);
                     renderGamePlay(renderer, playGround, target, painter, score);
-                    SDL_RenderPresent(renderer);
                 }
                 break;
             case SDLK_UP:
@@ -524,7 +538,6 @@ void moveTarget(SDL_Renderer* renderer, PlayGround& playGround, Target &target, 
                     target.up();
                     Mix_PlayChannel(-1, chunk, 0);
                     renderGamePlay(renderer, playGround, target, painter, score);
-                    SDL_RenderPresent(renderer);
                 }
                 break;
             case SDLK_DOWN:
@@ -532,7 +545,6 @@ void moveTarget(SDL_Renderer* renderer, PlayGround& playGround, Target &target, 
                     target.down();
                     Mix_PlayChannel(-1, chunk, 0);
                     renderGamePlay(renderer, playGround, target, painter, score);
-                    SDL_RenderPresent(renderer);
                 }
                 break;
             case SDLK_SPACE:
@@ -551,28 +563,28 @@ void moveTarget(SDL_Renderer* renderer, PlayGround& playGround, Target &target, 
                         case SDLK_LEFT:
                             if (target.y > 0) {
                                 target.left();
-                                playGround.swapGem(target, target0);
+                                playGround.swapGem(target.x, target.y, target0.x, target0.y);
                                 return;
                             }
                             break;
                         case SDLK_RIGHT:
                             if (target.y < 9) {
                                 target.right();
-                                playGround.swapGem(target, target0);
+                                playGround.swapGem(target.x, target.y, target0.x, target0.y);
                                 return;
                             }
                             break;
                         case SDLK_UP:
                             if (target.x > 0) {
                                 target.up();
-                                playGround.swapGem(target, target0);
+                                playGround.swapGem(target.x, target.y, target0.x, target0.y);
                                 return;
                             }
                             break;
                         case SDLK_DOWN:
                             if (target.x < 9) {
                                 target.down();
-                                playGround.swapGem(target, target0);
+                                playGround.swapGem(target.x, target.y, target0.x, target0.y);
                                 return;
                             }
                             break;
@@ -596,7 +608,7 @@ void moveTarget(SDL_Renderer* renderer, PlayGround& playGround, Target &target, 
 void continueGame(bool &running) {
     SDL_Event e;
     Mix_Chunk* chunk = NULL;
-    chunk = Mix_LoadWAV("sounds/click1.wav"); 
+    chunk = Mix_LoadWAV("sounds/click3.wav"); 
 
     while (true) {
         if (SDL_WaitEvent(&e)) switch(e.type){
@@ -614,7 +626,7 @@ void continueGame(bool &running) {
     }          
 }
 
-void returnTarget(SDL_Renderer* renderer, PlayGround& playGround, Target &target, SDL_Event &event2, Painter &painter) {
+void returnTarget(PlayGround& playGround, Target &target, SDL_Event &event2) {
     Target target0 = target;
     switch(event2.key.keysym.sym){
     case SDLK_LEFT:
@@ -632,7 +644,7 @@ void returnTarget(SDL_Renderer* renderer, PlayGround& playGround, Target &target
     default:
         break;
     }
-    playGround.swapGem(target, target0);
+    playGround.swapGem(target.x, target.y, target0.x, target0.y);
 }
 
 void fallingGems(SDL_Renderer* renderer, PlayGround& playGround, Target &target, Painter &painter, int &score, int &loop) {
@@ -643,14 +655,12 @@ void fallingGems(SDL_Renderer* renderer, PlayGround& playGround, Target &target,
                 check = true;
                 score += loop;
                 for (int i0 = i; i0 > 0; i0--) {
-                    Target target1(i0, j), target2(i0-1, j);
-                    playGround.swapGem(target1, target2);
+                    playGround.swapGem(i0, j, i0-1, j);
                 }
                 playGround.addGem(0, j);
             }
         if (check) {
             renderGamePlay(renderer, playGround, target, painter, score);
-            SDL_RenderPresent(renderer);
         }
     }
 }
@@ -664,15 +674,13 @@ void update(int &score, int &loop, bool &correct, SDL_Event &event, SDL_Renderer
         Mix_PlayChannel(-1, chunk, 0);
         playGround.deleteGems();
         renderGamePlay(renderer, playGround, target, painter, score);
-        SDL_RenderPresent(renderer);
         SDL_Delay(300);
         fallingGems(renderer, playGround, target, painter, score, loop);
     } else if (loop == 1) {
         chunk = Mix_LoadWAV("sounds/click2.wav");
         Mix_PlayChannel(-1, chunk, 0);
-        returnTarget(renderer, playGround, target, event, painter);
+        returnTarget(playGround, target, event);
         renderGamePlay(renderer, playGround, target, painter, score);
-        SDL_RenderPresent(renderer);
     }
 }
 
@@ -693,26 +701,23 @@ int main(int argc, char** argv) {
 
         music = Mix_LoadMUS("sounds/background_music1.mp3");
         Mix_PlayMusic(music, -1);
-        renderStartGame1(renderer, painter);
+        renderGameStart1(renderer, painter);
 
         continueGame(running);
         if (!running) break;
 
-        renderStartGame2(renderer, painter);
-        renderStartGame1(renderer, painter);
+        renderGameStart2(renderer, painter);
+        renderGameStart1(renderer, painter);
         Mix_HaltMusic();
-        chunk = Mix_LoadWAV("sounds/click3.wav");
-        Mix_PlayChannel(-1, chunk, 0);
         music = Mix_LoadMUS("sounds/background_music2.mp3");
         Mix_PlayMusic(music, -1);
 
-        addNewBomGem(renderer, playGround, target, painter, score, turn);
+        renderGamePlay(renderer, playGround, target, painter, score);
         while(!win) {
             SDL_Event event;
             moveTarget(renderer, playGround, target, event, painter, score, running);
             if (!running) break;
             renderGamePlay(renderer, playGround, target, painter, score);
-            SDL_RenderPresent(renderer);
             SDL_Delay(100);
             bool correct = true;
             int loop = 0;
@@ -724,12 +729,11 @@ int main(int argc, char** argv) {
             if (loop > 1) {
                 turn++;
                 win = (playGround.explode());
-                addNewBomGem(renderer, playGround, target, painter, score, turn);
+                playGround.addNewBomGem(turn);
             }
         }
         if (!running) break;
         renderGameOver(renderer, painter, score);
-        SDL_RenderPresent(renderer);
         Mix_HaltMusic();
         music = Mix_LoadMUS("sounds/background_music3.mp3");
         Mix_PlayMusic(music, -1);
