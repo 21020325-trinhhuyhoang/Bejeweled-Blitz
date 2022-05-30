@@ -452,7 +452,7 @@ int main(int argc, char** argv) {
     while(running) {
         PlayGround playGround;
         Target target(0,0);
-        bool win = false;
+        bool lose = false;
         int score = 0, turn = 0;
 
         music = Mix_LoadMUS("sounds/background_music1.mp3");
@@ -469,7 +469,7 @@ int main(int argc, char** argv) {
         Mix_PlayMusic(music, -1);
 
         renderGamePlay(renderer, playGround, target, score);
-        while (!win) {
+        while (!lose) {
             SDL_Event event;
             moveTarget(renderer, playGround, target, event, score, running);
             if (!running) break;
@@ -484,7 +484,7 @@ int main(int argc, char** argv) {
             }
             if (loop > 1) {
                 turn++;
-                win = (playGround.explode());
+                lose = (playGround.explode());
                 playGround.addNewBomGem(turn);
                 renderGamePlay(renderer, playGround, target, score);
             }
