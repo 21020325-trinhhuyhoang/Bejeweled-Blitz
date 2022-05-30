@@ -15,8 +15,14 @@ Game Xếp kim cương viết bằng ngôn ngữ C++ sử dụng thư viện đ�
 ```
 git clone https://github.com/21020325-trinhhuyhoang/Bejeweled-Blitz.git
 ```
-- Mở folder **_Bejeweled-Blitz_** bằng lệnh `cd Bejeweled-Blitz`
-- Để chạy game sử dụng câu lệnh `mingw32-make` và `.\main.exe`
+- Mở folder **_Bejeweled-Blitz_** bằng lệnh 
+```
+cd Bejeweled-Blitz
+```
+- Để chạy game sử dụng câu lệnh
+```
+.\main.exe
+```
 ***
 ## Mô tả chung
 - **Bối cảnh**:
